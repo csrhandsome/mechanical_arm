@@ -8,26 +8,27 @@ import threading
 import os
 import cv2
 
-
+# mp.Queue 是一个先进先出（FIFO）队列。
+# LifoQueue 是一个后进先出（LIFO）队列。
 # 0.0005
 def GetFingerForceProcess(dataDir, InitTime, FingerForceReceiveQue=mp.Queue(),
                           stopQue=mp.Queue(), collision=False, CollisionVelQue=mp.Queue()):
     # fig, ax = plt.subplots()
 
     self = Finger(dataDir)
-    thread4 = threading.Thread(target=self.GetImgThread, daemon=True)
+    thread4 = threading.Thread(target=self.GetImgThread, daemon=True)#一直往队列里面放图片
     thread4.start()
     OffsetForceRecord = np.zeros((0, 6))
     RecordFingerForceTime = np.zeros(0)
 
     ArucoPoseRecord = np.zeros((0, 6))
     FingerForceInit = np.zeros((100, 6))
-    for i in range(100):
+    for i in range(100):#填满一百次初始值
         try:
-            return_ = self.getForce()
+            return_ = self.getForce()#从队列里面取出图片，通过力矩和位姿计算得到力，然后返回
             # return yPredict, dp / 1000,img
             if return_ is not None:
-                FingerForceInit[i, :], _, img = return_
+                FingerForceInit[i, :], _, img = return_#返回的力存到FingerForceInit
                 # yPredict[0] = 6 * dp[0]  形变此时以毫米为单位
         except BaseException:
             continue
@@ -41,7 +42,7 @@ def GetFingerForceProcess(dataDir, InitTime, FingerForceReceiveQue=mp.Queue(),
         # mp.Queue()
         try:
             # time.sleep(0.01)
-            OriginForce, ArucoPose, img = self.getForce()
+            OriginForce, ArucoPose, img = self.getForce()#再次得到力，并且减去之前取得的力的100次的均值
         except BaseException:
             print("GetFingerForceProcess Error!")
             continue
@@ -49,7 +50,7 @@ def GetFingerForceProcess(dataDir, InitTime, FingerForceReceiveQue=mp.Queue(),
         # print("OffsetForce", OffsetForce)
 
         # if abs(OffsetForce[0]) > 15 or abs(OffsetForce[1]) > 15 or abs(OffsetForce[-1]) > 10:
-        if abs(OffsetForce[0]) > 5 or abs(OffsetForce[1]) > 5 or abs(OffsetForce[-1]) > 5:
+        if abs(OffsetForce[0]) > 5 or abs(OffsetForce[1]) > 5 or abs(OffsetForce[-1]) > 5: #力的差值的绝对值要到一定的范围
             print("OffsetForce_big", OffsetForce)
             FingerForceReceiveQue.put(np.concatenate((OffsetForce, ArucoPose), axis=0))
             print("GetFingerForceProcess Fger Force over above limit")

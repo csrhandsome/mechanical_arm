@@ -18,7 +18,7 @@ import multiprocessing as mp
 
 
 class detector(object):
-    def __init__(self, source='./'):
+    def __init__(self, source='./'):#根据相机的内参等来构建类的参数
         super().__init__()
         self.source = source
 
@@ -54,22 +54,24 @@ class detector(object):
                                                               parameters=self.parameters)
         if current_ids is None:
             return None
-
+        #标记相对于相机坐标系的旋转和平移向量   返回六维，x,y,z,mx,my,mz
         rvecs, tvecs, _ = aruco.estimatePoseSingleMarkers(current_corners, 
                                                           self.marker_length, 
                                                           self.camera_matrix, 
                                                           self.camera_dist) 
         
-        rr = R.from_rotvec(rvecs[0])
+        rr = R.from_rotvec(rvecs[0])#旋转向量转换为旋转对象
         # 旋转矩阵
         # matrix = rr.as_matrix()
         # rtvecs = rr.apply(tvecs[0][0] * 1000)
+        #将旋转对象 rr 转换为欧拉角，使用 'xyz' 顺序，并以度数表示。
+        # 结果是一个包含三个欧拉角的数组。
         rpy = rr.as_euler('xyz', degrees=True)[0]
         # 欧拉角   
         rpy[-1] = rpy[-1] + 360 * (rpy[-1] < 0)
         rpy[0] = rpy[0] + 360 * (rpy[0] < 0)
 
-        return np.concatenate((tvecs[0][0] * 1000, rpy))
+        return np.concatenate((tvecs[0][0] * 1000, rpy))#相当于dataframe里面的concat
         # 初始 Final Vector: [5.54131605e-01 1.43942161e-01 2.61879730e+01 1.80826534e+02 3.54908876e-01 3.58560626e+02]
         # 形变后 Final Vector: [ -1.91192365   0.54926175  25.51828007 169.97963501  -7.71564783 1.90439425]
 class GetFingerForce(object):
@@ -104,7 +106,7 @@ class GetFingerForce(object):
                 p = self.detect.detect(img)
                 # p: [5.54131605e-01 1.43942161e-01 2.61879730e+01 1.80826534e+02
  # 3.54908876e-01 3.58560626e+02]
-            p[3] = p[3] + 360 * (p[3] < 0)
+            p[3] = p[3] + 360 * (p[3] < 0)#mx
             tag_pose_vecs[i, :] = p
         for i in range(100):
             p = None
@@ -115,7 +117,7 @@ class GetFingerForce(object):
             p[3] = p[3] + 360 * (p[3] < 0)
             tag_pose_vecs[i, :] = p
         print("p0 ready")
-        self.p0 = np.mean(tag_pose_vecs[:, :], axis=0)
+        self.p0 = np.mean(tag_pose_vecs[:, :], axis=0)# 初始位姿 上面的工作是为了计算这个初始值
         print("p0", self.p0)
         # 取均值
         self.dpLast = np.zeros([6])
@@ -190,9 +192,10 @@ if __name__ == '__main__':
     # from ReadOnrobot import OnRobotFT
 
     self_ = GetFingerForce(dataDir)
+    # 使用线程后不断地从摄像头捕获图像，并将其放入ImgQue队列中。通过将这个方法放在一个守护线程（daemon=True）中运行
     thread4 = threading.Thread(target=self_.GetImgThread, daemon=True)
-    # 为持续从摄像头捕获图像，并将其放入一个队列中。通过将这个方法放在一个守护线程（daemon=True）中运行
     thread4.start()
+
     InitTime = time.time()
     readings = []
     i = 0
@@ -203,7 +206,7 @@ if __name__ == '__main__':
             i = i + 1
             BTime = time.time()
 
-            return_ = self_.getForce()
+            return_ = self_.getForce()#从ImgQue里面去除图片，调用detect类里面的detect函数来识别二维码，得到位姿和力矩，将其转换为力，然后返回
             # return yPredict, dp / 1000（二维码位姿偏移）,img
             # print(return_)
 

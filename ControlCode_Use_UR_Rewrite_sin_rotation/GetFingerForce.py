@@ -76,7 +76,7 @@ class GetFingerForce(object):
     def __init__(self, dataDir):
         self.dataDir = dataDir
         # Camera ready
-        for i in range(0, 8):
+        for i in range(1, 8):
             self.cap = cv2.VideoCapture(i, cv2.CAP_V4L2)
             # self.cap = cv2.VideoCapture(i)
             if self.cap.isOpened():

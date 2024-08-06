@@ -63,10 +63,9 @@ def GetFingerForceProcess(dataDir, InitTime, FingerForceReceiveQue=mp.Queue(),
         # print("fingerForceReceiveQue_put", OffsetForce, ArucoPose)
 
         RecordFingerForceTime = np.append(RecordFingerForceTime, time.time() - InitTime)
-        OffsetForceRecord = np.concatenate((OffsetForceRecord, OffsetForce.reshape(1, 6)), axis=0)
         ArucoPoseRecord = np.concatenate((ArucoPoseRecord, ArucoPose.reshape(1, 6)), axis=0)
+        OffsetForceRecord = np.concatenate((OffsetForceRecord, OffsetForce.reshape(1, 6)), axis=0)
         photo_array.append(img)
-
     np.save(dataDir + 'RecordOffsetForceTime.npy', RecordFingerForceTime, )
     np.save(dataDir + 'ArucoPose.npy', ArucoPoseRecord, )
     np.save(dataDir + 'OffsetForce.npy', OffsetForceRecord)
